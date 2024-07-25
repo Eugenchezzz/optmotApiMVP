@@ -186,18 +186,50 @@ function add_tovar_handle_post_request() {
     $json_data = file_get_contents('php://input');
 
     // Декодируем JSON в ассоциативный массив
-    $data = json_decode($json_data, true);
+    $values = json_decode($json_data, true);
 
     // Проверяем, был ли JSON успешно декодирован
     if (json_last_error() === JSON_ERROR_NONE) {
       // Отображаем данные на странице
       echo '<pre>';
-      print_r($data);
+      print_r($values);
       echo '</pre>';
     } else {
       // Если произошла ошибка при декодировании JSON
       echo 'Ошибка декодирования JSON: ' . json_last_error_msg();
     }
+
+
+
+    // создание товара по данным из json
+
+    $product = commerce_product_new('zapchast');
+
+    $product->sku = $values['sku'];
+    // цена
+    $product->commerce_price[LANGUAGE_NONE][0] = array(
+      'amount' => $values['commerce_price_amount'], // Значение в центах
+      'currency_code' => $values['commerce_price_currency_code'], // Код валюты
+    );
+
+    // марка
+    $marka_tid = get_term_tid_by_name($values['field_marka_ref']);
+    $product->field_marka_ref[LANGUAGE_NONE][0]['tid'] = $marka_tid;
+    // модель
+    $model_tid = get_term_tid_by_name($values['field_model_ref']);
+    $product->field_model_ref[LANGUAGE_NONE][0]['tid'] = $model_tid;
+    // поколение
+    $pokolenie_tid = get_term_tid_by_name($values['field_pokolenie_ref']);
+    $product->field_pokolenie_ref[LANGUAGE_NONE][0]['tid'] = $pokolenie_tid;
+    // год
+    $year_tid = get_term_tid_by_name($values['field_year_ref']);
+    $product->field_year_ref[LANGUAGE_NONE][0]['tid'] = $year_tid;
+    // запчасть
+    $zapchast_tid = get_term_tid_by_name($values['field_zapchast_ref']);
+    $product->field_zapchast_ref[LANGUAGE_NONE][0]['tid'] = $zapchast_tid;
+
+    commerce_product_save($product);
+
   } else {
     echo 'Этот скрипт ожидает POST-запросик.';
   }
