@@ -12,6 +12,12 @@ function add_tovar_menu() {
     'access arguments' => array('administer site configuration'),
   );
 
+  $items['get_tovar_data_by_post'] = array(
+    'title' => 'Получение данных POST',
+    'page callback' => 'add_tovar_handle_post_request',
+    'access arguments' => array('access content'),
+  );
+
   return $items;
 }
 
@@ -158,4 +164,41 @@ function get_term_tid_by_name($name) {
     return $term->tid;
   }
   return 0;
+}
+
+
+
+
+
+// далее - отдельный функционал для приема post запроса
+
+
+
+
+
+/**
+ * Функция для обработки POST-запроса и отображения JSON.
+ */
+function add_tovar_handle_post_request() {
+  // Проверяем, что запрос является POST-запросом
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Получаем данные из POST-запроса
+    $json_data = file_get_contents('php://input');
+
+    // Декодируем JSON в ассоциативный массив
+    $data = json_decode($json_data, true);
+
+    // Проверяем, был ли JSON успешно декодирован
+    if (json_last_error() === JSON_ERROR_NONE) {
+      // Отображаем данные на странице
+      echo '<pre>';
+      print_r($data);
+      echo '</pre>';
+    } else {
+      // Если произошла ошибка при декодировании JSON
+      echo 'Ошибка декодирования JSON: ' . json_last_error_msg();
+    }
+  } else {
+    echo 'Этот скрипт ожидает POST-запросик.';
+  }
 }
