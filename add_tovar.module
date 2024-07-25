@@ -1,0 +1,161 @@
+<?php
+/**
+ * Implements hook_menu().
+ */
+function add_tovar_menu() {
+  $items = array();
+
+  $items['admin/add_tovarmvp'] = array(
+    'title' => 'Add Product',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('add_tovar_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
+}
+
+function add_tovar_form($form, $form_state){
+
+// артикул
+$form['sku'] = array(
+  '#type' => 'textfield',
+  '#title' => t('артикул'),
+  '#required' => TRUE,
+  '#description' => t('Product SKU (must be an integer).'),
+);
+
+
+
+// Цена
+     //значение в центах
+     $form['commerce_price_amount'] = array(
+      '#type' => 'textfield',
+      '#title' => t('цена (значение)'),
+      '#required' => TRUE,
+      '#description' => t('в центах'),
+    );
+      //значение валюты
+    $form['commerce_price_currency_code'] = array(
+      '#type' => 'select',
+      '#title' => t('цена (валюта)'),
+      '#options' => array(
+        'USD' => 'USD',
+
+        'RUB' => 'RUB',
+        'BYN' => 'BYN',
+      ),
+      '#required' => TRUE,
+      '#description' => t('выбрать'),
+    );
+
+  // марка
+  $form['field_marka_ref'] = array(
+    '#type' => 'textfield',
+    '#title' => t('марка'),
+    '#required' => TRUE,
+  );
+  // модель
+  $form['field_model_ref'] = array(
+    '#type' => 'textfield',
+    '#title' => t('модель'),
+    '#required' => TRUE,
+  );
+  // поколение
+  $form['field_pokolenie_ref'] = array(
+    '#type' => 'textfield',
+    '#title' => t('поколение'),
+    '#required' => TRUE,
+  );
+
+  // год
+  $form['field_year_ref'] = array(
+    '#type' => 'textfield',
+    '#title' => t('год'),
+    '#required' => TRUE,
+  );
+  // запчасть
+  $form['field_zapchast_ref'] = array(
+    '#type' => 'textfield',
+    '#title' => t('запчасть'),
+    '#required' => TRUE,
+  );
+
+ // статус публикации
+  $form['status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Status'),
+    '#description' => t('Check to publish the product.'),
+  );
+
+// кнопка сохранения
+$form['submit'] = array(
+  '#type' => 'submit',
+  '#value' => t('Add Product'),
+);
+
+return $form;
+
+}
+
+
+/**
+ * Функция обработки отправки формы.
+ */
+function add_tovar_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+
+  $product = commerce_product_new('zapchast');
+  $product->sku = $values['sku'];
+
+
+  // цена
+  $product->commerce_price[LANGUAGE_NONE][0] = array(
+    'amount' => $values['commerce_price_amount'], // Значение в центах
+    'currency_code' => $values['commerce_price_currency_code'], // Код валюты
+  );
+
+   // марка
+   $marka_tid = get_term_tid_by_name($values['field_marka_ref']);
+   drupal_set_message(t('TID марки: @tid', array('@tid' => $marka_tid)));
+   $product->field_marka_ref[LANGUAGE_NONE][0]['tid'] = $marka_tid;
+   // модель
+   $model_tid = get_term_tid_by_name($values['field_model_ref']);
+   drupal_set_message(t('TID модели: @tid', array('@tid' => $model_tid)));
+   $product->field_model_ref[LANGUAGE_NONE][0]['tid'] = $model_tid;
+   // поколение
+   $pokolenie_tid = get_term_tid_by_name($values['field_pokolenie_ref']);
+   drupal_set_message(t('TID поколения: @tid', array('@tid' => $pokolenie_tid)));
+   $product->field_pokolenie_ref[LANGUAGE_NONE][0]['tid'] = $pokolenie_tid;
+   // год
+   $year_tid = get_term_tid_by_name($values['field_year_ref']);
+   drupal_set_message(t('TID года: @tid', array('@tid' => $year_tid)));
+   $product->field_year_ref[LANGUAGE_NONE][0]['tid'] = $year_tid;
+   // запчасть
+   $zapchast_tid = get_term_tid_by_name($values['field_zapchast_ref']);
+   drupal_set_message(t('TID запчасти: @tid', array('@tid' => $zapchast_tid)));
+   $product->field_zapchast_ref[LANGUAGE_NONE][0]['tid'] = $zapchast_tid;
+
+   commerce_product_save($product);
+
+   if ($product->product_id) {
+    drupal_set_message(t('Product with SKU @sku has been created with product ID @pid.', array('@sku' => $product->sku, '@pid' => $product->product_id)));
+  } else {
+    drupal_set_message(t('Failed to create product with SKU @sku.', array('@sku' => $product->sku)), 'error');
+  }
+
+}
+
+
+
+/**
+ * Функция для получения tid термина по имени.
+ */
+function get_term_tid_by_name($name) {
+  $term = taxonomy_get_term_by_name($name);
+  if ($term) {
+    $term = reset($term);
+    return $term->tid;
+  }
+  return 0;
+}
